@@ -1,0 +1,75 @@
+﻿@model IEnumerable<CinemaTask.Models.Movie>
+
+@{
+    ViewData["Title"] = "Movies";
+}
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2 class="mb-0">Movies List</h2>
+        <a asp-area="Admin" asp-controller="Movie" asp-action="Create" class="btn btn-primary">
+            <i class="fa fa-plus"></i> Add New Movie
+        </a>
+    </div>
+
+    <table class="table table-bordered table-striped align-middle">
+        <thead class="table-dark">
+            <tr>
+                <th>#</th>
+                <th>Name</th>
+                <th>Description</th>
+                <th>Price</th>
+                <th>Status</th>
+                <th>Main Image</th>
+                <th>CategoryName</th>
+                <th>CinemaName</th>
+                <th>ActorName</th>
+                <th>DateTime</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (Model != null && Model.Any())
+            {
+                int i = 1;
+                foreach (var movie in Model)
+                {
+                    <tr>
+                        <td>@i</td>
+                        <td>@movie.Name</td>
+                        <td>@movie.Description</td>
+                        <td>@movie.Price</td>
+                        <td>
+                            @(movie.Status ? "Active" : "Inactive")
+                        </td>
+                        <td>
+                            @if (!string.IsNullOrEmpty(movie.MainImage))
+                            {
+                                <img src="~/images/movies/@movie.MainImage" alt="Poster" width="60" height="80" class="rounded shadow-sm" />
+                            }
+                            else
+                            {
+                                <span class="text-muted">No image</span>
+                            }
+                        </td>
+                        <td>@movie.CategoryId</td>
+                        <td>@movie.CinemaId</td>
+                        <td>@movie.ActorId</td>
+                        <td>@movie.DateTime.ToString("yyyy-MM-dd")</td>
+                        <td>
+                            <a asp-area="Admin" asp-controller="Movie" asp-action="Edit" asp-route-id="@movie.Id" class="btn btn-sm btn-warning">Edit</a>
+                            <a asp-area="Admin" asp-controller="Movie" asp-action="Delete" asp-route-id="@movie.Id" class="btn btn-sm btn-danger">Delete</a>
+                        </td>
+                    </tr>
+                    i++;
+                }
+            }
+            else
+            {
+                <tr>
+                    <td colspan="11" class="text-center text-muted">No movies found.</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

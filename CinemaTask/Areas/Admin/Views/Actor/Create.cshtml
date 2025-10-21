@@ -1,0 +1,30 @@
+﻿@model CinemaTask.Models.Actor
+
+@{
+    ViewData["Title"] = "Add New Actor";
+}
+
+<div class="container mt-4">
+    <h2>Add New Actor</h2>
+    <hr />
+
+    <form asp-area="Admin" asp-controller="Actor" asp-action="Create" method="post" enctype="multipart/form-data">
+        <div class="mb-3">
+            <label asp-for="@Model.ActorName" class="form-label"></label>
+            <input asp-for="@Model.ActorName" class="form-control" placeholder="Enter actor name" />
+            <span asp-validation-for="@Model.ActorName" class="text-danger"></span>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="@Model.ActorImage" class="form-label">@Model.ActorImage</label>
+            <input type="file" name="ImageFile" class="form-control" />
+        </div>
+
+        <button type="submit" class="btn btn-success">Save</button>
+        <a asp-area="Admin" asp-controller="Actor" asp-action="Index" class="btn btn-secondary">Cancel</a>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

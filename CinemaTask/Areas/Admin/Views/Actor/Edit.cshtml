@@ -1,0 +1,44 @@
+﻿@model CinemaTask.Models.Actor
+
+@{
+    ViewData["Title"] = "Edit Actor";
+}
+
+<div class="container mt-4">
+    <h2>Edit Actor</h2>
+    <hr />
+
+    <form asp-area="Admin" asp-controller="Actor" asp-action="Edit" method="post" enctype="multipart/form-data">
+        <input type="hidden" asp-for="ActorId" />
+
+        <div class="mb-3">
+            <label asp-for="ActorName" class="form-label"></label>
+            <input asp-for="ActorName" class="form-control" />
+            <span asp-validation-for="ActorName" class="text-danger"></span>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Current Image</label><br />
+            @if (!string.IsNullOrEmpty(Model.ActorImage))
+            {
+                <img src="~/images/actors/@Model.ActorImage" alt="@Model.ActorName" width="100" class="rounded" />
+            }
+            else
+            {
+                <span class="text-muted">No image uploaded</span>
+            }
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="ActorImage" class="form-label">Change Image</label>
+            <input type="file" name="ImageFile" class="form-control" />
+        </div>
+
+        <button type="submit" class="btn btn-primary">Update</button>
+        <a asp-area="Admin" asp-controller="Actor" asp-action="Index" class="btn btn-secondary">Cancel</a>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

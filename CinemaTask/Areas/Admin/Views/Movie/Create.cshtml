@@ -1,0 +1,76 @@
+﻿@model CinemaTask.Models.Movie
+
+@{
+    ViewData["Title"] = "Add New Movie";
+}
+
+<div class="container mt-4">
+    <h2>Add New Movie</h2>
+    <hr />
+
+    <form asp-area="Admin" asp-controller="Movie" asp-action="Create" method="post" enctype="multipart/form-data">
+        <div class="mb-3">
+            <label asp-for="Name" class="form-label"></label>
+            <input asp-for="Name" class="form-control" placeholder="Enter movie name" />
+            <span asp-validation-for="Name" class="text-danger"></span>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="Description" class="form-label"></label>
+            <textarea asp-for="Description" class="form-control" placeholder="Enter movie description"></textarea>
+            <span asp-validation-for="Description" class="text-danger"></span>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="Price" class="form-label"></label>
+            <input asp-for="Price" class="form-control" placeholder="Enter movie price" />
+            <span asp-validation-for="Price" class="text-danger"></span>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="DateTime" class="form-label"></label>
+            <input asp-for="DateTime" type="datetime-local" class="form-control" />
+            <span asp-validation-for="DateTime" class="text-danger"></span>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="MainImage" class="form-label">Main Image</label>
+            <input type="file" name="MainImageFile" class="form-control" />
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="SubImage" class="form-label">Sub Image</label>
+            <input type="file" name="SubImageFile" class="form-control" />
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="CategoryId" class="form-label"></label>
+            <input asp-for="CategoryId" class="form-control" placeholder="Enter category ID" />
+            <span asp-validation-for="CategoryId" class="text-danger"></span>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="CinemaId" class="form-label"></label>
+            <input asp-for="CinemaId" class="form-control" placeholder="Enter cinema ID" />
+            <span asp-validation-for="CinemaId" class="text-danger"></span>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="ActorId" class="form-label"></label>
+            <input asp-for="ActorId" class="form-control" placeholder="Enter actor ID" />
+            <span asp-validation-for="ActorId" class="text-danger"></span>
+        </div>
+
+        <div class="form-check mb-3">
+            <input asp-for="Status" class="form-check-input" />
+            <label asp-for="Status" class="form-check-label">Active</label>
+        </div>
+
+        <button type="submit" class="btn btn-success">Save</button>
+        <a asp-area="Admin" asp-controller="Movie" asp-action="Index" class="btn btn-secondary">Cancel</a>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

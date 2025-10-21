@@ -1,0 +1,55 @@
+﻿@model IEnumerable<CinemaTask.Models.Cinema>
+
+@{
+    ViewData["Title"] = "Cinemas";
+}
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2 class="mb-0">Cinemas List</h2>
+        <a asp-area="Admin" asp-controller="Cinema" asp-action="Create" class="btn btn-primary">
+            <i class="fa fa-plus"></i> Add New Cinema
+        </a>
+    </div>
+
+    <table class="table table-bordered table-striped align-middle">
+        <thead class="table-dark">
+            <tr>
+                <th>#</th>
+                <th>Cinema Name</th>
+                <th>Description</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (Model != null && Model.Any())
+            {
+                int i = 1;
+                foreach (var cinema in Model)
+                {
+                    <tr>
+                        <td>@i</td>
+                        <td>@cinema.Name</td>
+                        <td>@cinema.Description</td>
+                        <td>
+                            <a asp-area="Admin" asp-controller="Cinema" asp-action="Edit" asp-route-id="@cinema.Id" class="btn btn-sm btn-warning">
+                                Edit
+                            </a>
+
+                            <a asp-area="Admin" asp-controller="Cinema" asp-action="Delete" asp-route-id="@cinema.Id" class="btn btn-sm btn-danger">
+                                Delete
+                            </a>
+                        </td>
+                    </tr>
+                    i++;
+                }
+            }
+            else
+            {
+                <tr>
+                    <td colspan="4" class="text-center text-muted">No cinemas found.</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

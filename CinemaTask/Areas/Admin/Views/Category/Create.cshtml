@@ -1,0 +1,27 @@
+﻿@model CinemaTask.Models.Category
+
+@{
+    ViewData["Title"] = "Add New Category";
+}
+
+<div class="container mt-4">
+    <h2>Add New Category</h2>
+    <hr />
+
+    <form asp-area="Admin" asp-controller="Category" asp-action="Create" method="post" enctype="multipart/form-data">
+        <div class="mb-3">
+            <label asp-for="@Model.Name" class="form-label"></label>
+            <input asp-for="@Model.Name" class="form-control" placeholder="Enter actor name" />
+            <span asp-validation-for="@Model.Name" class="text-danger"></span>
+        </div>
+
+       
+
+        <button type="submit" class="btn btn-success">Save</button>
+        <a asp-area="Admin" asp-controller="Category" asp-action="Index" class="btn btn-secondary">Cancel</a>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

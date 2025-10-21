@@ -1,0 +1,64 @@
+﻿@model IEnumerable<CinemaTask.Models.Actor>
+
+@{
+    ViewData["Title"] = "Actors";
+}
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2 class="mb-0">Actors List</h2>
+        <a asp-area="Admin" asp-controller="Actor" asp-action="Create" class="btn btn-primary">
+            <i class="fa fa-plus"></i> Add New Actor
+        </a>
+    </div>
+
+    <table class="table table-bordered table-striped align-middle">
+        <thead class="table-dark">
+            <tr>
+                <th>#</th>
+                <th>Actor Name</th>
+                <th>Actor Image</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (Model != null && Model.Any())
+            {
+                int i = 1;
+                foreach (var actor in Model)
+                {
+                    <tr>
+                        <td>@i</td>
+                        <td>@actor.ActorName</td>
+                        <td>
+                            @if (!string.IsNullOrEmpty(actor.ActorImage))
+                            {
+                                <img src="~/images/actors/@actor.ActorImage" alt="@actor.ActorName" width="80" class="rounded" />
+                            }
+                            else
+                            {
+                                <span class="text-muted">No image</span>
+                            }
+                        </td>
+                        <td>
+                            <a asp-area="Admin" asp-controller="Actor" asp-action="Edit" asp-route-id="@actor.ActorId" class="btn btn-sm btn-warning">
+                                Edit
+                            </a>
+                            
+                            <a asp-area="Admin" asp-controller="Actor" asp-action="Delete" asp-route-id="@actor.ActorId" class="btn btn-sm btn-danger">
+                                Delete
+                            </a>
+                        </td>
+                    </tr>
+                    i++;
+                }
+            }
+            else
+            {
+                <tr>
+                    <td colspan="4" class="text-center text-muted">No actors found.</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
