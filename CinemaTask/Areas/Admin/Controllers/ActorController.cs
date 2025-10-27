@@ -1,98 +1,88 @@
 ﻿using CinemaTask.Data;
 using CinemaTask.Models;
+using CinemaTask.Repositories.IRepositories;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Identity.Client;
+using System.Threading;
 
 namespace CinemaTask.Areas.Admin.Controllers
 {
     [Area("Admin")]
     public class ActorController : Controller
     {
-        private readonly ApplicationDbContext _context;
-        private readonly IWebHostEnvironment _env;
+        private readonly IRepository<Actor> _ActorRepository;
+        //private readonly ApplicationDbContext _context;
+        //private readonly IWebHostEnvironment _env;
 
-        public ActorController(ApplicationDbContext context, IWebHostEnvironment env)
+        public  ActorController(IRepository<Actor> ActorRepository)
         {
-            _context = context;
-            _env = env;
+            _ActorRepository = ActorRepository;
         }
 
-        public IActionResult Index()
-        {
-            var actors = _context.Actors.ToList();
-            return View(actors);
-        }
 
+        public async Task<IActionResult> Index(CancellationToken cancellationToken)
+        {
+            var actors = await _ActorRepository.GetAsync(tracked: false, cancellationToken: cancellationToken);
+
+            // Add Filter
+
+            return View(actors.AsEnumerable());
+        }
+        [HttpGet]
         public IActionResult Create()
         {
             return View(new Actor());
         }
-
         [HttpPost]
-        public IActionResult Create(Actor actor, IFormFile ImageFile)
+        public async Task<IActionResult> Create(Actor actor, CancellationToken cancellationToken)
         {
-            if (ImageFile != null && ImageFile.Length > 0)
+            if (!ModelState.IsValid)
             {
-                var fileName = Guid.NewGuid() + Path.GetExtension(ImageFile.FileName);
-                var path = Path.Combine(_env.WebRootPath, "images/actors", fileName);
-
-                using var stream = new FileStream(path, FileMode.Create);
-                ImageFile.CopyTo(stream);
-
-                actor.ActorImage = fileName;
+                return View(actor);
             }
 
-            _context.Actors.Add(actor);
-            _context.SaveChanges();
+            await _ActorRepository.AddAsync(actor, cancellationToken);
+            await _ActorRepository.CommitAsync(cancellationToken);
+
             return RedirectToAction(nameof(Index));
         }
+
 
         [HttpGet]
-        public IActionResult Edit(int id)
+        public async Task<IActionResult> Edit(int id, CancellationToken cancellationToken)
         {
-            var actor = _context.Actors.Find(id);
-            if (actor == null) return NotFound();
-            return View(actor);
+            var actot = await _ActorRepository.GetOneAsync(e => e.ActorId == id, cancellationToken: cancellationToken);
+            if (actot is null)
+                return RedirectToAction("NotFoundPage", "Home");
+            return View(actot);
+
         }
 
-        [HttpPost]
-        public IActionResult Edit(Actor actor, IFormFile? ImageFile)
+        public async Task<IActionResult> Edit(Actor actor, CancellationToken cancellationToken)
         {
-            var existing = _context.Actors.Find(actor.ActorId);
-            if (existing == null) return NotFound();
-
-            existing.ActorName = actor.ActorName;
-
-            if (ImageFile != null && ImageFile.Length > 0)
+            if (!ModelState.IsValid)
             {
-                var fileName = Guid.NewGuid() + Path.GetExtension(ImageFile.FileName);
-                var path = Path.Combine(_env.WebRootPath, "images/actors", fileName);
+                //ModelState.AddModelError(string.Empty, "Any More Errors");
 
-                using var stream = new FileStream(path, FileMode.Create);
-                ImageFile.CopyTo(stream);
-
-                existing.ActorImage = fileName;
+                return View(actor);
             }
 
-            _context.SaveChanges();
+            _ActorRepository.Update(actor);
+            await _ActorRepository.CommitAsync(cancellationToken);
+
             return RedirectToAction(nameof(Index));
         }
-            public IActionResult Delete(int id)
+        public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken)
         {
-            var actor = _context.Actors.FirstOrDefault(a => a.ActorId == id);
-            if (actor == null) return NotFound();
+            var category = await _ActorRepository.GetOneAsync(e => e.ActorId == id, cancellationToken: cancellationToken);
 
-            // delete image if exists
-            if (!string.IsNullOrEmpty(actor.ActorImage))
-            {
-                var path = Path.Combine(_env.WebRootPath, "images", "actors", actor.ActorImage);
-                if (System.IO.File.Exists(path))
-                    System.IO.File.Delete(path);
-            }
+            if (category is null)
+                return RedirectToAction("NotFoundPage", "Home");
 
-            _context.Actors.Remove(actor);
-            _context.SaveChanges();
-            return RedirectToAction("Index");
+            _ActorRepository.Delete(category);
+            await _ActorRepository.CommitAsync(cancellationToken);
+
+            return RedirectToAction(nameof(Index));
         }
     }
 

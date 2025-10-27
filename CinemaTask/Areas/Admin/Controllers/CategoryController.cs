@@ -1,72 +1,93 @@
 ﻿using CinemaTask.Data;
 using CinemaTask.Models;
+using CinemaTask.Repositories.IRepositories;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace CinemaTask.Areas.Admin.Controllers
-{
+{ 
+    
+
     [Area("Admin")]
     public class CategoryController : Controller
     {
-        private readonly ApplicationDbContext _context;
-        private readonly IWebHostEnvironment _env;
+        //ApplicationDbContext _context = new();
+        //Repository<Category> _categoryRepository = new();
+        private readonly IRepository<Category> _categoryRepository;// = new Repository<Category>();
 
-        public CategoryController(ApplicationDbContext context, IWebHostEnvironment env)
+        public CategoryController(IRepository<Category> categoryRepository)
         {
-            _context = context;
-            _env = env;
+            _categoryRepository = categoryRepository;
         }
 
-        public IActionResult Index()
+        public async Task<IActionResult> Index(CancellationToken cancellationToken)
         {
-            var Categories = _context.Categories.ToList();
-            return View(Categories);
+            var categories = await _categoryRepository.GetAsync(tracked: false, cancellationToken: cancellationToken);
+
+            // Add Filter
+
+            return View(categories.AsEnumerable());
         }
 
         [HttpGet]
         public IActionResult Create()
         {
-            return View();
+            return View(new Category());
         }
+
         [HttpPost]
-        public IActionResult Create(Category category)
+        public async Task<IActionResult> Create(Category category, CancellationToken cancellationToken)
         {
             if (!ModelState.IsValid)
+            {
                 return View(category);
+            }
 
-            _context.Categories.Add(category);
-            _context.SaveChanges();
+            await _categoryRepository.AddAsync(category, cancellationToken);
+            await _categoryRepository.CommitAsync(cancellationToken);
 
+            //return View(nameof(Index));
             return RedirectToAction(nameof(Index));
         }
 
         [HttpGet]
-        [HttpGet]
-        public IActionResult Edit(int id)
+        public async Task<IActionResult> Edit(int id, CancellationToken cancellationToken)
         {
-            var category = _context.Categories.Find(id);
-            if (category == null) return NotFound();
+            var category = await _categoryRepository.GetOneAsync(e => e.Id == id, cancellationToken: cancellationToken);
+
+            if (category is null)
+                return RedirectToAction("NotFoundPage", "Home");
+
             return View(category);
         }
-        [HttpPost]
-        public IActionResult Edit(Category category)
-        {
-            var existing = _context.Categories.Find(category.Id);
-            if (existing == null) return NotFound();
 
-            existing.Name = category.Name;
-            _context.SaveChanges();
+        [HttpPost]
+        public async Task<IActionResult> Edit(Category category, CancellationToken cancellationToken)
+        {
+            if (!ModelState.IsValid)
+            {
+                //ModelState.AddModelError(string.Empty, "Any More Errors");
+
+                return View(category);
+            }
+
+            _categoryRepository.Update(category);
+            await _categoryRepository.CommitAsync(cancellationToken);
+
             return RedirectToAction(nameof(Index));
         }
-        [HttpGet]
-        public IActionResult Delete(int id)
-        {
-            var category = _context.Categories.Find(id);
-            if (category == null) return NotFound();
-            _context.Categories.Remove(category);
-            _context.SaveChanges();
-            return RedirectToAction(nameof(Index));
 
+        public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken)
+        {
+            var category = await _categoryRepository.GetOneAsync(e => e.Id == id, cancellationToken: cancellationToken);
+
+            if (category is null)
+                return RedirectToAction("NotFoundPage", "Home");
+
+            _categoryRepository.Delete(category);
+            await _categoryRepository.CommitAsync(cancellationToken);
+
+            return RedirectToAction(nameof(Index));
         }
     }
 }

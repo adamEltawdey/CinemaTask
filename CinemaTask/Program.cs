@@ -1,8 +1,7 @@
-using Microsoft.AspNetCore.Builder;
+using CinemaTask.Data;
+using CinemaTask.Repositories;
+using CinemaTask.Repositories.IRepositories;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using CinemaTask.Data; // make sure this matches your DbContext namespace
 
 namespace CinemaTask
 {
@@ -15,9 +14,12 @@ namespace CinemaTask
             // Add services to the container
             builder.Services.AddControllersWithViews();
 
-            // Register DbContext (IMPORTANT)
+            // Register DbContext
             builder.Services.AddDbContext<ApplicationDbContext>(options =>
                 options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+            // Register generic repository
+            builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
 
             var app = builder.Build();
 
@@ -30,6 +32,7 @@ namespace CinemaTask
 
             app.UseHttpsRedirection();
             app.UseStaticFiles();
+
             app.UseRouting();
             app.UseAuthorization();
 

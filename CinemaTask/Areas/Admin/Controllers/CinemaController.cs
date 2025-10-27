@@ -1,51 +1,24 @@
-﻿using CinemaTask.Data;
-using CinemaTask.Migrations;
-using CinemaTask.Models;
+﻿using CinemaTask.Models;
+using CinemaTask.Repositories.IRepositories;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.VisualStudio.Web.CodeGenerators.Mvc.Templates.Blazor;
 
 namespace CinemaTask.Areas.Admin.Controllers
 {
     [Area("Admin")]
     public class CinemaController : Controller
     {
-        private readonly ApplicationDbContext _context;
-        private readonly IWebHostEnvironment _env;
+        private readonly IRepository<Cinema> _cinemaRepository;
 
-        public CinemaController(ApplicationDbContext context, IWebHostEnvironment env)
+        public CinemaController(IRepository<Cinema> cinemaRepository)
         {
-            _context = context;
-            _env = env;
-        }
-
-        public IActionResult Index()
-        {
-            var Cinemas = _context.Cinemas.ToList();
-            return View(Cinemas);
+            _cinemaRepository = cinemaRepository;
         }
 
         [HttpGet]
-        public IActionResult Edit(int id)
+        public async Task<IActionResult> Index(CancellationToken cancellationToken)
         {
-            var cinema = _context.Cinemas.Find(id);
-            if (cinema == null) return NotFound();
-            return View(cinema);
-        }
-        [HttpPost]
-        public IActionResult Edit(Models.Cinema cinema)
-        {
-            var existingCinema = _context.Cinemas.Find(cinema.Id);
-            if (existingCinema == null) return NotFound();
-
-            existingCinema.Name = cinema.Name;
-            existingCinema.Description = cinema.Description;
-            existingCinema.Address = cinema.Address;
-            existingCinema.Phone = cinema.Phone;
-            existingCinema.Email = cinema.Email;
-            existingCinema.Movies = cinema.Movies;
-
-            _context.SaveChanges();
-            return RedirectToAction(nameof(Index));
+            var cinemas = await _cinemaRepository.GetAsync(tracked: false, cancellationToken: cancellationToken);
+            return View(cinemas.AsEnumerable());
         }
 
         [HttpGet]
@@ -53,23 +26,52 @@ namespace CinemaTask.Areas.Admin.Controllers
         {
             return View(new Cinema());
         }
+
         [HttpPost]
-        public IActionResult Create(Cinema cinema)
+        public async Task<IActionResult> Create(Cinema cinema, CancellationToken cancellationToken)
         {
-            _context.Cinemas.Add(cinema);
-            _context.SaveChanges();
+            if (!ModelState.IsValid)
+                return View(cinema);
 
-           return RedirectToAction(nameof(Index));
-        }
-        public IActionResult Delete(int id)
-        {
-            var Cinema = _context.Cinemas.FirstOrDefault(a => a.Id == id);
-            if (Cinema == null) return NotFound();
+            await _cinemaRepository.AddAsync(cinema, cancellationToken);
+            await _cinemaRepository.CommitAsync(cancellationToken);
 
-            _context.Cinemas.Remove(Cinema); 
-            _context.SaveChanges();
-            return RedirectToAction("Index");
+            return RedirectToAction(nameof(Index));
         }
 
+        [HttpGet]
+        public async Task<IActionResult> Edit(int id, CancellationToken cancellationToken)
+        {
+            var cinema = await _cinemaRepository.GetOneAsync(e => e.Id == id, cancellationToken: cancellationToken);
+            if (cinema == null)
+                return RedirectToAction("NotFoundPage", "Home");
+
+            return View(cinema);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> Edit(Cinema cinema, CancellationToken cancellationToken)
+        {
+            if (!ModelState.IsValid)
+                return View(cinema);
+
+            _cinemaRepository.Update(cinema);
+            await _cinemaRepository.CommitAsync(cancellationToken);
+
+            return RedirectToAction(nameof(Index));
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken)
+        {
+            var cinema = await _cinemaRepository.GetOneAsync(e => e.Id == id, cancellationToken: cancellationToken);
+            if (cinema == null)
+                return RedirectToAction("NotFoundPage", "Home");
+
+            _cinemaRepository.Delete(cinema);
+            await _cinemaRepository.CommitAsync(cancellationToken);
+
+            return RedirectToAction(nameof(Index));
+        }
     }
 }

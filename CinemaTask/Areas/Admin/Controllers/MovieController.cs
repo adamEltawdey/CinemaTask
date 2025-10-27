@@ -1,5 +1,7 @@
 ﻿using CinemaTask.Data;
+using CinemaTask.Migrations;
 using CinemaTask.Models;
+using CinemaTask.Repositories.IRepositories;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -7,136 +9,106 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Numerics;
 
 namespace CinemaTask.Areas.Admin.Controllers
 {
     [Area("Admin")]
     public class MovieController : Controller
     {
-        private readonly ApplicationDbContext _context;
-        private readonly IWebHostEnvironment _env;
+        private readonly IRepository<Movie> _MovieRepository;
+        //private readonly ApplicationDbContext _context;
+        //private readonly IWebHostEnvironment _env;
 
-        public MovieController(ApplicationDbContext context, IWebHostEnvironment env)
+        public MovieController(IRepository<Movie> MovieRepository)
         {
-            _context = context;
-            _env = env;
+            _MovieRepository = MovieRepository;
         }
 
-        public IActionResult Index()
+
+        public async Task<IActionResult> Index(CancellationToken cancellationToken)
         {
-            var Movies = _context.Movies.ToList();
-            return View(Movies);
+            var movies = await _MovieRepository.GetAsync(tracked: false, cancellationToken: cancellationToken);
+
+            // Add Filter
+
+            return View(movies.AsEnumerable());
         }
+
         [HttpGet]
         public IActionResult Create()
         {
-            ViewData["Categories"] = _context.Categories.ToList();
-            ViewData["Cinemas"] = _context.Cinemas.ToList();
-            ViewData["Actors"] = _context.Actors.ToList();
-            return View();
+            return View(new Movie());
         }
 
+
         [HttpPost]
-        public IActionResult Create(Movie movie, IFormFile MainImage, List<IFormFile> SubImages)
+        public async Task<IActionResult> Create(Movie movie, IFormFile? MainImageFile, IFormFile? SubImageFile, CancellationToken cancellationToken)
         {
             if (!ModelState.IsValid)
+            {
                 return View(movie);
-
-            // handle main image
-            if (MainImage != null && MainImage.Length > 0)
-            {
-                var fileName = Guid.NewGuid() + Path.GetExtension(MainImage.FileName);
-                var path = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images", "movies", fileName);
-
-                var dir = Path.GetDirectoryName(path);
-                if (!Directory.Exists(dir))
-                    Directory.CreateDirectory(dir);
-
-                using var stream = new FileStream(path, FileMode.Create);
-                MainImage.CopyTo(stream);
-
-                movie.MainImage = fileName;
             }
 
-            _context.Movies.Add(movie);
-            _context.SaveChanges();
-
-            // handle sub images
-            if (SubImages != null && SubImages.Count > 0)
+            // Handle image uploads
+            if (MainImageFile != null && MainImageFile.Length > 0)
             {
-                foreach (var img in SubImages)
-                {
-                    if (img.Length > 0)
-                    {
-                        var subFileName = Guid.NewGuid() + Path.GetExtension(img.FileName);
-                        var subPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images", "movies", subFileName);
+                var fileName = Guid.NewGuid() + Path.GetExtension(MainImageFile.FileName);
+                var filePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/images/movies", fileName);
 
-                        using var stream = new FileStream(subPath, FileMode.Create);
-                        img.CopyTo(stream);
-
-                        movie.SubImage = subFileName; // optional: for single string property
-                    }
-                }
-
-                _context.SaveChanges();
+                Directory.CreateDirectory(Path.GetDirectoryName(filePath)!);
+                using var stream = new FileStream(filePath, FileMode.Create);
+                await MainImageFile.CopyToAsync(stream, cancellationToken);
+                movie.MainImage = "/images/movies/" + fileName;
             }
+
+            if (SubImageFile != null && SubImageFile.Length > 0)
+            {
+                var fileName = Guid.NewGuid() + Path.GetExtension(SubImageFile.FileName);
+                var filePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot/images/movies", fileName);
+
+                Directory.CreateDirectory(Path.GetDirectoryName(filePath)!);
+                using var stream = new FileStream(filePath, FileMode.Create);
+                await SubImageFile.CopyToAsync(stream, cancellationToken);
+                movie.SubImage = "/images/movies/" + fileName;
+            }
+
+            await _MovieRepository.AddAsync(movie, cancellationToken);
+            await _MovieRepository.CommitAsync(cancellationToken);
 
             return RedirectToAction(nameof(Index));
         }
 
-        [HttpGet]
-        public IActionResult Edit(int id)
-        {
-            var movie = _context.Movies.Find(id);
-            if (movie == null)
-                return NotFound();
 
-            ViewData["Categories"] = _context.Categories.ToList();
-            ViewData["Cinemas"] = _context.Cinemas.ToList();
-            ViewData["Actors"] = _context.Actors.ToList();
-            return View(movie);
+        [HttpGet]
+        public IActionResult Edit()
+        {
+            return View(new Movie());
         }
 
         [HttpPost]
-        public IActionResult Edit(Movie movie, IFormFile? MainImage)
+        public async Task<IActionResult> Edit(Movie movie, CancellationToken cancellationToken)
         {
-            var existing = _context.Movies.Find(movie.Id);
-            if (existing == null)
-                return NotFound();
-
-            existing.Name = movie.Name;
-            existing.Description = movie.Description;
-            existing.Price = movie.Price;
-            existing.Status = movie.Status;
-            existing.CategoryId = movie.CategoryId;
-            existing.CinemaId = movie.CinemaId;
-            existing.ActorId = movie.ActorId;
-            existing.DateTime = movie.DateTime;
-
-            if (MainImage != null && MainImage.Length > 0)
+            if (!ModelState.IsValid)
             {
-                var fileName = Guid.NewGuid() + Path.GetExtension(MainImage.FileName);
-                var path = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images", "movies", fileName);
-
-                using var stream = new FileStream(path, FileMode.Create);
-                MainImage.CopyTo(stream);
-
-                existing.MainImage = fileName;
+                return View(movie);
             }
-
-            _context.SaveChanges();
+            _MovieRepository.Update(movie);
+            await _MovieRepository.CommitAsync(cancellationToken);
             return RedirectToAction(nameof(Index));
         }
 
         [HttpGet]
-        public IActionResult Delete(int id)
+        public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken)
         {
-            var movie = _context.Movies.Find(id);
-            if (movie == null)
-                return NotFound();
+            var category = await _MovieRepository.GetOneAsync(e => e.Id == id, cancellationToken: cancellationToken);
 
-            _context.Movies.Remove(movie);
-            _context.SaveChanges();
+            if (category is null)
+                return RedirectToAction("NotFoundPage", "Home");
+
+            _MovieRepository.Delete(category);
+            await _MovieRepository.CommitAsync(cancellationToken);
+
             return RedirectToAction(nameof(Index));
         }
     }
