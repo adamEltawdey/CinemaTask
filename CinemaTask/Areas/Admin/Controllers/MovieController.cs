@@ -1,5 +1,5 @@
 ﻿using CinemaTask.Data;
-using CinemaTask.Migrations;
+//using CinemaTask.Migrations;
 using CinemaTask.Models;
 using CinemaTask.Repositories.IRepositories;
 using Microsoft.AspNetCore.Http;
